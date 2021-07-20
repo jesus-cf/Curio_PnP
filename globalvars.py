@@ -27,6 +27,7 @@ def initglobals():
     global canvas_xsize, canvas_ysize, grid_mat
     global symbol_list, label_list, pin_list, wire_list, junc_list, text_list
     global showgrid, recent_files
+
     bg_color='blue'
     symbol_color='green'
     pin_color='pink'

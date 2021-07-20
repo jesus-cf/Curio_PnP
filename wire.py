@@ -322,10 +322,10 @@ class wire(symbol.symbol):
     def sym_ascii(self):
         z=get_zoom()
         x1, y1, x2, y2 = self.canvas.coords(self.line)
-        s='wire,%f,%f,%f,%f\n' % (x1/z,y1/z,x2/z,y2/z)
+        s='wire,%0.2f,%0.2f,%0.2f,%0.2f\n' % (x1/z,y1/z,x2/z,y2/z)
         for item in self.label_list:
             x1b, y1b, xb2, y2b = self.canvas.coords(item.rect)
-            s+='label,%f,%f,%s,%d,%d\n' % (x1b/z, y1b/z, item.value, item.direction, item.visible)
+            s+='label,%0.2f,%0.2f,%s,%d,%d\n' % (x1b/z, y1b/z, item.value, item.direction, item.visible)
         return s
         
     # Rotate the wire around its center

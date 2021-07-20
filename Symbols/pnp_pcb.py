@@ -150,7 +150,7 @@ class sym(symbol.symbol):
         if self.Last_Centroid_File_Loaded != self.label_list[4].get_value():
             if os.path.isfile(self.label_list[4].get_value()):
                 self.Last_Centroid_File_Loaded=self.label_list[4].get_value()
-                with open(self.Last_Centroid_File_Loaded) as f:
+                with open(self.label_list[4].get_value()) as f:
                     content = f.read().splitlines()
                     f.close()
 
@@ -200,12 +200,11 @@ class sym(symbol.symbol):
                                 self.target_name.append(word[1]) # Cut tape name
                                 self.target_angle.append(word[4]) # Part orientation
 
-                # Update all but the image WARNING: self.x and self.y are not updated after moving
+                # Update all but the image. WARNING: self.x and self.y are not updated after moving
                 self.canvas.move(self.tag3, self.x, self.y)
                 self.canvas.scale(self.tag3, 0, 0, self.zoom, self.zoom)
                 self.canvas.itemconfigure(self.tag3, width=self.zoom)
 
-    
         if self.Last_Image_File_Loaded != self.label_list[3].get_value():
             if os.path.isfile(self.label_list[3].get_value()):
                 self.img=(Image.open(self.label_list[3].get_value()))

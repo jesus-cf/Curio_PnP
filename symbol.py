@@ -176,10 +176,10 @@ class symbol:
     def sym_ascii(self):
         z=get_zoom()
         x1, y1, x2, y2 = self.canvas.coords(self.rect)
-        s='symbol,%s,%f,%f,%d,%d\n' % (self.__module__,x1/z,y1/z,self.mirrorv*2+self.mirrorh,self.direction)
+        s='symbol,%s,%0.2f,%0.2f,%d,%d\n' % (self.__module__,x1/z,y1/z,self.mirrorv*2+self.mirrorh,self.direction)
         for item in self.label_list:
             x1b, y1b, xb2, y2b = self.canvas.coords(item.rect)
-            s+='label,%f,%f,%s,%d,%d,%f\n' % (x1b/z, y1b/z, item.value, item.direction, item.visible, item.height)
+            s+='label,%0.2f,%0.2f,%s,%d,%d,%0.2f\n' % (x1b/z, y1b/z, item.value, item.direction, item.visible, item.height)
         return s
        
 class MyDialog(tkSimpleDialog.Dialog):

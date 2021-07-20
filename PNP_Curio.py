@@ -96,10 +96,7 @@ def addundo(toremove, toadd):
 
     file_modified=True
 
-def go_undo(event):
-    do_undo()
-
-def do_undo():
+def do_undo(event=None):
     global undo_list_toadd,  undo_list_toremove, undo_ctr, selected_item
     global selected_symbol_list, selected_label_list, selected_wire_list
     global filename
@@ -152,11 +149,8 @@ def do_undo():
 
     # add everything that was removed
     loadfromstring(undo_list_toremove[undo_ctr], 0, False)
-    
-def go_redo(event):
-    do_redo()
-    
-def do_redo():
+     
+def do_redo(event=None):
     global undo_list_toadd,  undo_list_toremove, undo_ctr, selected_item
     global selected_symbol_list, selected_label_list, selected_wire_list
     global filename
@@ -702,18 +696,12 @@ def DoubleB1Press(event):
            buff_toadd=item.sym_ascii()
            addundo(buff_toremove, buff_toadd)
            return
-
-def go_cut(event):
-    do_cut()
-    
-def do_cut():
+  
+def do_cut(event=None):
     do_copy()
     do_delete()
     
-def go_delete(event):
-    do_delete();
-
-def do_delete():
+def do_delete(event=None):
     global click_x, click_y, selected_symbol_list, selected_label_list, selected_wire_list
     global buff_toremove
     
@@ -756,11 +744,8 @@ def do_delete():
             addundo(buff_toremove,'');
             Update_Bubbles()
             return
- 
-def go_rotate_ccw(event):
-    do_rotate_ccw()
         
-def do_rotate_ccw():
+def do_rotate_ccw(event=None):
     global click_x, click_y, selected_symbol_list, selected_label_list, selected_wire_list
     global buff_toremove
 
@@ -804,7 +789,7 @@ def do_rotate_ccw():
                 Update_Bubbles()
                 return
 
-def AddSymbol():
+def AddSymbol(event=None):
     global click_x, click_y
 
     input_filename=tkFileDialog.askopenfilename(title='Select new symbol', initialdir='./Symbols',
@@ -822,9 +807,6 @@ def AddSymbol():
             Update_Bubbles()
         except:
             tkMessageBox.showerror("PNP_Curio ERROR", "Not a valid symbol file.")
-
-def go_zoomin(event):
-    do_zoomin()
 
 def do_zoomto(val):
     h0,h1=hbar.get()
@@ -849,7 +831,7 @@ def do_zoomto(val):
     canvas.itemconfigure("grid", width=1)
     canvas.itemconfigure("selection", width=1)
     
-def do_zoomin():
+def do_zoomin(event=None):
     h0,h1=hbar.get()
     v0,v1=vbar.get()
     zold=float(get_zoom())
@@ -870,10 +852,7 @@ def do_zoomin():
     canvas.itemconfigure("grid", width=1)
     canvas.itemconfigure("selection", width=1)
 
-def go_zoomout(event):
-    do_zoomout()
-
-def do_zoomout():
+def do_zoomout(event=None):
     h0,h1=hbar.get()
     v0,v1=vbar.get()
     zold=float(get_zoom())
@@ -921,10 +900,7 @@ def do_valueset():
            addundo(remove_buffer, add_buffer)
            return
 
-def go_copy(event):
-    do_copy()
-
-def do_copy():
+def do_copy(event=None):
     global selected_symbol_list, selected_wire_list 
     copy_buffer=[]
     if selected_symbol_list or selected_wire_list:
@@ -937,10 +913,7 @@ def do_copy():
     root.clipboard_clear()
     root.clipboard_append(''.join(copy_buffer))
 
-def go_paste(event):
-    do_paste()
-
-def do_paste():
+def do_paste(event=None):
     result = root.selection_get(selection = "CLIPBOARD") 
     loadfromstring(result, 50, True)
     add_buffer=[]
@@ -950,7 +923,7 @@ def do_paste():
         add_buffer+=item.sym_ascii()
     addundo('',add_buffer)
     
-def do_popup(event):
+def do_popup(event=None):
     global click_x, click_y, screen_x, screen_y
     # Read the scroll bars and convert to screen coordinates
     screen_x=event.x
@@ -963,7 +936,7 @@ def do_popup(event):
        # make sure to release the grab (Tk 8.0a1 only)
        popup.grab_release()
 
-def do_wireonoff(event):
+def do_wireonoff(event=None):
     global wiremode
     if wiremode==True:
         wiremode=False
@@ -972,10 +945,7 @@ def do_wireonoff(event):
         wiremode=True
         canvas.config( cursor="pencil")
 
-def do_AddSymbol(event):
-    AddSymbol()
-
-def do_editmode(event):
+def do_editmode(event=None):
     global wiremode
     wiremode=False
     canvas.config( cursor="top_left_arrow")
@@ -989,11 +959,8 @@ def myquit():
             return
     Save_Configuration()
     root.destroy()
-
-def go_savefile(event):
-    savefile()
-    
-def savefile():
+  
+def do_savefile(event=None):
     global filename
     global file_modified
 
@@ -1024,9 +991,6 @@ def savefileas():
         text_file.close()
         file_modified=False
         prev_file_modified=True # To refresh title bar
-
-def go_openfile(event):
-    openfile()
 
 def loadfromstring(str, offset, select):
     global selected_symbol_list, selected_label_list, selected_wire_list
@@ -1097,6 +1061,9 @@ def loadfromstring(str, offset, select):
 def Recent_File_Callback (idx):
     openfile(g.recent_files[idx])
 
+def go_openfile(event):
+    openfile()
+
 def openfile(passed_name=''):
     global filename, undo_ctr, filemenu
     global prev_file_modified, file_modified
@@ -1162,8 +1129,11 @@ def newfile(ask=True):
     undo_list_toadd=[]
     undo_ctr=0
 
-def hello():
-    print ("hello!")
+def Help():
+    print ("Help is coming soon.")
+
+def About():
+    print ("About is coming soon.")
 
 def drawgrid():
     global showgrid
@@ -1506,11 +1476,11 @@ def do_cut_foam_gig():
 
     Curio_in_Use=0
 
-def go_Abort_PnP(event):
+def do_Abort_PnP(event=None):
     global abort_PnP
     abort_PnP=1
 
-def go_Pause_PnP(event):
+def do_Pause_PnP(event=None):
     global Curio_in_Use, pause_PnP
     if Curio_in_Use==1:
         if pause_PnP==1:
@@ -1531,7 +1501,6 @@ def go_PnP(event=None):
     abort_PnP=0
     t1=Thread(target=do_PnP)
     t1.start()
-
 
 def do_PnP():
     global abort_PnP, Curio_in_Use, pause_PnP
@@ -1686,6 +1655,8 @@ def go_autoset_pnp(event=None):
     global canvas_xpos, canvas_ypos
     z=get_zoom()
 
+    # NEED TO ADD UNDO!
+
     autoset_pnp=[]
     if selected_item:
         autoset_pnp.append(selected_item)
@@ -1752,14 +1723,22 @@ def go_autoset_pnp(event=None):
                           (item.target_name[j], item.target_angle[j], item.label_list[0].get_value()))
 
 # This one is very useful when configuring pick and place points manually
-def Center_Wires_in_Part(event):
+def Center_Wires_in_Part(event=None):
     global canvas_xpos, canvas_ypos
     z=get_zoom()
 
     # NEED TO ADD UNDO!
+    
+    center_pnp=[]
+    if selected_item:
+        center_pnp.append(selected_item)
+    elif selected_symbol_list:
+        center_pnp=selected_symbol_list
+    else:
+        center_pnp=g.symbol_list 
 
-    for item in g.symbol_list: # For all the symbols in the list...
-        if item.pointisin(canvas_xpos, canvas_ypos)==1:
+    for item in center_pnp: # For all the symbols in the list...
+        if ('PCB' in item.tag) or ('CUT_TAPE' in item.tag): # Of course this only works for PCBs and Cut Tape
             cnt=1
             for target in item.targets:
                 tpoints=canvas.coords(target)
@@ -1832,9 +1811,9 @@ def on_shift_mousewheel(event):
 
 def on_control_mousewheel(event):
     if event.delta>0:
-        go_zoomin(event)
+        do_zoomin(event)
     else:
-        go_zoomout(event)       
+        do_zoomout(event)       
 
 def add_button(mygif, mytooltip, mycommand):
     img=PhotoImage(file=mygif)
@@ -1955,7 +1934,7 @@ root.protocol("WM_DELETE_WINDOW", myquit) # Handler for the 'X' button
 # create a pulldown menu and add it to the menu bar
 filemenu = Menu(menubar, tearoff=1)
 filemenu.add_command(label="Open", command=openfile)
-filemenu.add_command(label="Save", command=savefile)
+filemenu.add_command(label="Save", command=do_savefile)
 filemenu.add_command(label="Save as", command=savefileas)
 filemenu.add_command(label="New", command=newfile)
 filemenu.add_separator()
@@ -1975,14 +1954,34 @@ editmenu.add_command(label="Delete <Del>", command=do_delete)
 editmenu.add_separator()
 editmenu.add_command(label="Undo <Ctrl+Z>", command=do_undo)
 editmenu.add_command(label="Redo <Ctrl+Y>", command=do_redo)
+editmenu.add_separator()
+editmenu.add_command(label="Add Symbol <p>", command=AddSymbol)
+editmenu.add_command(label="Add Wire <w>", command=do_wireonoff)
+editmenu.add_command(label="Edit Mode <Escape>", command=do_editmode)
+editmenu.add_separator()
+editmenu.add_command(label="Auto Set <x>", command=go_autoset_pnp)
+editmenu.add_command(label="Center Wires  <*>", command=Center_Wires_in_Part)
 menubar.add_cascade(label="Edit", menu=editmenu)
 
+# Curio jobs menu
+Curiomenu = Menu(menubar, tearoff=0)
+Curiomenu.add_command(label="Cut Foam (i)", command=go_draw_text)
+Curiomenu.add_command(label="Draw Text (t)", command=go_draw_text)
+Curiomenu.add_command(label="Pick and Place (y)", command=go_PnP)
+Curiomenu.add_separator()
+Curiomenu.add_command(label="Abort/Stop (q)", command=do_Abort_PnP)
+Curiomenu.add_command(label="Pause Curio <space>", command=do_Pause_PnP)
+menubar.add_cascade(label="Curio", menu=Curiomenu)
+
+# Options menu
 optionsmenu = Menu(menubar, tearoff=0)
 optionsmenu.add_command(label="Colors", command=do_color_dialog)
 menubar.add_cascade(label="Options", menu=optionsmenu)
 
+# Help menu
 helpmenu = Menu(menubar, tearoff=0)
-helpmenu.add_command(label="About", command=hello)
+helpmenu.add_command(label="Help", command=Help)
+helpmenu.add_command(label="About", command=About)
 menubar.add_cascade(label="Help", menu=helpmenu)
 
 # display the menu
@@ -1990,10 +1989,10 @@ root.config(menu=menubar)
 
 # create the toolbar
 toolbar = Frame(root)
-
+# add the buttons to the toolbar
 add_button("Resource/new.gif", 'New File', newfile)
 add_button("Resource/open.gif", 'Open File', openfile)
-add_button("Resource/save.gif", 'Save File', savefile)
+add_button("Resource/save.gif", 'Save File', do_savefile)
 add_separator()
 add_button("Resource/cut.gif", 'Cut', do_cut)
 add_button("Resource/copy.gif", 'Copy', do_copy)
@@ -2001,13 +2000,21 @@ add_button("Resource/paste.gif", 'Paste', do_paste)
 add_button("Resource/undo.gif", 'Undo last edit', do_undo)
 add_button("Resource/redo.gif", 'Redo last edit', do_redo)
 add_separator()
-add_button("Resource/zoomin.gif", 'Zoom in', do_zoomin)
-add_button("Resource/zoomout.gif", 'Zoom out', do_zoomout)
+add_button("Resource/zoomin.gif", 'Zoom in (+)', do_zoomin)
+add_button("Resource/zoomout.gif", 'Zoom out (-)', do_zoomout)
 add_button("Resource/grid.gif", 'Grid on/off', do_gridonoff)
+add_separator()
+add_button("Resource/escape.gif", 'Edit Mode <Escape>', do_editmode)
+add_button("Resource/symbol.gif", 'Add Symbol (p)', AddSymbol)
+add_button("Resource/wire.gif", 'Add Wire (w)', do_wireonoff)
 add_separator()
 add_button("Resource/pick_and_place.gif", 'Pick and Place (y)', go_PnP)
 add_button("Resource/foam_cut.gif", 'Cut Foam (i)', go_cut_foam_gig)
 add_button("Resource/text_draw.gif", 'Draw Text (t)', go_draw_text)
+add_separator()
+add_button("Resource/stop.gif", 'Abort/Stop (q)', do_Abort_PnP)
+add_button("Resource/pause.gif", 'Pause Curio <space>', do_Pause_PnP)
+add_separator()
 toolbar.pack(side=TOP, fill=X)
 
 # Create the drawing canvas with its scroll bars
@@ -2029,7 +2036,7 @@ canvas.config(xscrollcommand=hbar.set, yscrollcommand=vbar.set)
 canvas.pack(fill=BOTH, expand=YES)
 
 root.bind("w", do_wireonoff)
-root.bind("p", do_AddSymbol)
+root.bind("p", AddSymbol)
 canvas.bind("<Button-1>", B1Press)
 canvas.bind("<Control-1>", B1CtrlPress)
 canvas.bind("<Double-Button-1>", DoubleB1Press)
@@ -2044,30 +2051,31 @@ canvas.bind("<Button-4>", on_mousewheel) # For Linux?
 canvas.bind("<Button-5>", on_mousewheel) # For Linux?
 canvas.bind('<Shift-Button-4>', on_shift_mousewheel) # For Linux?
 canvas.bind('<Shift-Button-5>', on_shift_mousewheel) # For Linux?
-root.bind("<Control-c>", go_copy)
-root.bind("<Control-v>", go_paste)
-root.bind("<Control-x>", go_cut)
-root.bind("<Delete>", go_delete)
+root.bind("<Control-c>", do_copy)
+root.bind("<Control-v>", do_paste)
+root.bind("<Control-x>", do_cut)
+root.bind("<Delete>", do_delete)
 root.bind("<Escape>", do_editmode)
 root.bind("<Control-n>", go_newfile)
 root.bind("<Control-o>", go_openfile)
-root.bind("<Control-s>", go_savefile)
-root.bind("<Control-z>", go_undo)
-root.bind("<Control-y>", go_redo)
-root.bind("+", go_zoomin)
-root.bind("=", go_zoomin)
-root.bind("-", go_zoomout)
-root.bind("r", go_rotate_ccw)
+root.bind("<Control-s>", do_savefile)
+root.bind("<Control-z>", do_undo)
+root.bind("<Control-y>", do_redo)
+root.bind("+", do_zoomin)
+root.bind("=", do_zoomin)
+root.bind("-", do_zoomout)
+root.bind("r", do_rotate_ccw)
 root.bind("t", go_draw_text)
-root.bind("x", go_autoset_pnp)
 root.bind("i", go_cut_foam_gig)
 root.bind("y", go_PnP)
+root.bind("q", do_Abort_PnP)
+root.bind("<space>", do_Pause_PnP)
+# This keyboard commands need menu entries and buttons
+root.bind("x", go_autoset_pnp)
 root.bind(".", Check_Point)
 root.bind("*", Center_Wires_in_Part)
 root.bind("<Home>", ZeroZero_Point)
 root.bind("/", ZeroZero_Point)
-root.bind("q", go_Abort_PnP)
-root.bind("<space>", go_Pause_PnP)
 drawgrid()
 
 Update_Symbol_Images()
