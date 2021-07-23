@@ -1,26 +1,33 @@
 #!/usr/bin/python
 
-# Copyright (C) 2020-2021  Jesus Calvino-Fraga, jesuscf (at) gmail.com
-# 
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License as published by the
-# Free Software Foundation; either version 2, or (at your option) any
-# later version.
-# 
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-# 
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+About_Text="""
+Copyright (C) 2020-2021  Jesus Calvino-Fraga
+jesuscf (at) gmail.com
+
+This program is free software; you can redistribute
+it and/or modify it under the terms of the GNU General
+Public License as published by the Free Software
+Foundation; either version 2, or (at your option) any
+later version.
+
+This program is distributed in the hope that it will
+be useful, but WITHOUT ANY WARRANTY; without even the
+implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.  See the GNU General Public License
+for more details.
+
+You should have received a copy of the GNU General
+Public License along with this program; if not, write
+to the Free Software Foundation, 59 Temple Place -
+Suite 330, Boston, MA 02111-1307, USA.
+"""
 
 import globalvars as g
 from globalvars import *
 import sys
 from threading import *
 import math
+import subprocess
 
 sys.path.insert(0, './Symbols')
 
@@ -82,11 +89,6 @@ def addundo(toremove, toadd):
 
     if toadd==toremove:
         return
-    '''
-    print "To remove:"
-    print ''.join(toremove)
-    print "To add:"
-    print ''.join(toadd)'''
     
     del undo_list_toremove[undo_ctr:]
     del undo_list_toadd[undo_ctr:]
@@ -102,7 +104,7 @@ def do_undo(event=None):
     global filename
     global file_modified
 
-    #print "Undo level is %d" % undo_ctr
+    # print ("Undo level is %d" % (undo_ctr)) # for testing
 
     if(undo_ctr>0):
         file_modified=True
@@ -234,11 +236,6 @@ def B1Motion(event):
         return
 
     if wiremode==True:
-        #gridsize=int(get_zoom()*10)
-        #posx=int((canvas.canvasx(event.x)+gridsize/2)/gridsize)
-        #posy=int((canvas.canvasy(event.y)+gridsize/2)/gridsize)
-        #posx*=gridsize
-        #posy*=gridsize
         posx=canvas.canvasx(event.x)
         posy=canvas.canvasy(event.y)
         canvas.coords('ConstructionWire', (click_x, click_y, posx, posy))
@@ -275,8 +272,6 @@ def B1Release(event):
 
     # If we are adding wires:
     if wiremode==True:
-        #a,b,c,d=canvas.coords('ConstructionWire')
-        #x0,y0,x1,y1=roundtoint(a,b,c,d)
         x0,y0,x1,y1=canvas.coords('ConstructionWire')
         if x0!=x1 or y0!=y1: # If the wire has zero length, ignore it
             # Search for a pin nearby.  If found one nearby, change the corresponding end of the wire
@@ -402,11 +397,6 @@ def B1Press(event):
     posy=canvas.canvasy(event.y)
 
     if wiremode==True:
-        #gridsize=int(get_zoom()*10)
-        #click_x=int((posx+gridsize/2)/gridsize)
-        #click_y=int((posy+gridsize/2)/gridsize)
-        #click_x*=gridsize
-        #click_y*=gridsize
         click_x=posx
         click_y=posy
         canvas.create_line(click_x, click_y, click_x+1, click_y+1, fill = get_select_color(), width=3*get_zoom(), tags="ConstructionWire")
@@ -1130,10 +1120,15 @@ def newfile(ask=True):
     undo_ctr=0
 
 def Help():
-    print ("Help is coming soon.")
+    manual="./Manual/PNP_Curio.pdf"
+    if sys.platform.lower().startswith('win'):
+        manual=manual.replace('/','\\')
+    print(manual)
+    subprocess.Popen(manual, shell=True)
 
 def About():
-    print ("About is coming soon.")
+    #print (About_Text)
+    tkMessageBox.showinfo("About PNP_Curio", About_Text)
 
 def drawgrid():
     global showgrid
@@ -1378,7 +1373,7 @@ def do_cut_foam_gig():
         if 'CUT_TAPE' in item.tag:
             # Are we cutting the internal or external perimeter?
             incut=item.label_list[7].get_value()
-            if incut=='1' or incut.lower()=='yes' or incut.lower()=='y' or incut.lower()=='on': 
+            if (incut=='1' or incut.lower()=='yes' or incut.lower()=='y' or incut.lower()=='on' or incut.lower()=='true'): 
                 points=canvas.coords(item.insidecut)
             else:
                 points=canvas.coords(item.tapeframe)
@@ -1437,7 +1432,7 @@ def do_cut_foam_gig():
             if 'CUT_TAPE' in item.tag:
                 # Are we cutting the internal or external perimeter?
                 incut=item.label_list[7].get_value()
-                if incut=='1' or incut.lower()=='yes' or incut.lower()=='y' or incut.lower()=='on': 
+                if (incut=='1' or incut.lower()=='yes' or incut.lower()=='y' or incut.lower()=='on' or incut.lower()=='true'): 
                     points= canvas.coords(item.insidecut)
                 else:
                     points= canvas.coords(item.tapeframe)
@@ -1542,7 +1537,7 @@ def do_PnP():
     else:
         topnp=g.symbol_list
 
-    # Pick and place of individual parts takes precedence over whole cut tape or pcb pick and place
+    # Pick and place of individual parts takes precedence over carrier cut tape or pcb pick and place
     # Therefore if there is a wire selected, do only wires:
     do_only_wires=False
     for item in g.wire_list: # For all the wires in the list...
@@ -1655,7 +1650,7 @@ def go_autoset_pnp(event=None):
     global canvas_xpos, canvas_ypos
     z=get_zoom()
 
-    # NEED TO ADD UNDO!
+    new_wires='' # The new wires are saved here and passed to the undo list
 
     autoset_pnp=[]
     if selected_item:
@@ -1714,20 +1709,25 @@ def go_autoset_pnp(event=None):
                                    if attached_wire==False:
                                        success=True                                         
                                        #create a new wire
-                                       currsym=wire.wire(canvas, ct_tx/z, ct_ty/z, pcb_tx/z, pcb_ty/z, '')
-                                       g.wire_list.append(currsym)
+                                       newwire=wire.wire(canvas, ct_tx/z, ct_ty/z, pcb_tx/z, pcb_ty/z, '')
+                                       g.wire_list.append(newwire)
+                                       new_wires+=newwire.sym_ascii()
                                        break
 
                 if not success:
                     print("Warning: Component \'%s\' with rotation \'%s\' in pcb \'%s\' is not available." %
                           (item.target_name[j], item.target_angle[j], item.label_list[0].get_value()))
+    if len(new_wires)>0:
+        addundo('',new_wires)
+    
 
 # This one is very useful when configuring pick and place points manually
 def Center_Wires_in_Part(event=None):
     global canvas_xpos, canvas_ypos
     z=get_zoom()
 
-    # NEED TO ADD UNDO!
+    old_wires='' # The old wires are saved here and passed to the undo list
+    new_wires='' # The new wires are saved here and passed to the undo list
     
     center_pnp=[]
     if selected_item:
@@ -1747,6 +1747,8 @@ def Center_Wires_in_Part(event=None):
                 #print ("Target " + str(cnt) + " " + str((tx, ty)))
                 cnt=cnt+1
                 for itemw in g.wire_list: # For all the wires in the list...
+                    old_wire_ascii=itemw.sym_ascii()
+                    moved=False
                     x0, y0, x1, y1 = canvas.coords(itemw.line)
                     #print("points: " + str((x0, y0, x1, y1)))
                     dx=tx-x0
@@ -1760,6 +1762,7 @@ def Center_Wires_in_Part(event=None):
                         itemw.canvas.move(itemw.bubble0, dx, dy)
                         itemw.canvas.move(itemw.circle0, dx, dy)
                         itemw.canvas.coords(itemw.rect, itemw.calculate_rect(x0, y0, x1, y1, False))
+                        moved=True
             
                     dx=tx-x1
                     dy=ty-y1
@@ -1772,7 +1775,14 @@ def Center_Wires_in_Part(event=None):
                         itemw.canvas.move(itemw.bubble1, dx, dy)
                         itemw.canvas.move(itemw.circle1, dx, dy)
                         itemw.canvas.coords(itemw.rect, itemw.calculate_rect(x0, y0, x1, y1, False))
+                        moved=True
 
+                    if moved:
+                        old_wires+=old_wire_ascii
+                        new_wires+=itemw.sym_ascii()
+
+    if len(new_wires)>0:
+        addundo(old_wires, new_wires)
             
 def ZeroZero_Point(event):
     global P
@@ -1846,7 +1856,8 @@ def Update_Symbol_Images():
         item.update_image()
         if 'CONFIGURATION' in item.tag: # Read information from the configuration symbol
             reconfigure=False
-            if item.label_list[1].get_value()=='1' or item.label_list[1].get_value()=='On':
+            bigmat=item.label_list[1].get_value().lower()
+            if (bigmat=='1' or  bigmat=='on' or bigmat=='y' or bigmat=='yes' or bigmat=='true'):
                 if g.canvas_ysize==1530: # Small tray?
                    g.canvas_ysize=1530*2 # use large tray
                    reconfigure=True
@@ -1876,7 +1887,8 @@ def Update_Symbol_Images():
                         except:
                             pass
 
-            if item.label_list[2].get_value()=='1' or item.label_list[2].get_value()=='On':
+            hidwires=item.label_list[2].get_value().lower()
+            if (hidwires=='1' or hidwires=='y' or hidwires=='yes' or hidwires=='on' or hidwires=='true'):
                 if wires_hidden==0:
                     wires_hidden=1
                     canvas.itemconfigure('wireline', fill = '')
@@ -1984,12 +1996,12 @@ helpmenu.add_command(label="Help", command=Help)
 helpmenu.add_command(label="About", command=About)
 menubar.add_cascade(label="Help", menu=helpmenu)
 
-# display the menu
+# Display the menu
 root.config(menu=menubar)
 
-# create the toolbar
+# Create the toolbar
 toolbar = Frame(root)
-# add the buttons to the toolbar
+# Add the buttons to the toolbar
 add_button("Resource/new.gif", 'New File', newfile)
 add_button("Resource/open.gif", 'Open File', openfile)
 add_button("Resource/save.gif", 'Save File', do_savefile)
@@ -2007,6 +2019,9 @@ add_separator()
 add_button("Resource/escape.gif", 'Edit Mode <Escape>', do_editmode)
 add_button("Resource/symbol.gif", 'Add Symbol (p)', AddSymbol)
 add_button("Resource/wire.gif", 'Add Wire (w)', do_wireonoff)
+add_separator()
+add_button("Resource/auto.gif", 'Auto set wires(x)', go_autoset_pnp)
+add_button("Resource/center.gif", 'Center Wires (*)', Center_Wires_in_Part)
 add_separator()
 add_button("Resource/pick_and_place.gif", 'Pick and Place (y)', go_PnP)
 add_button("Resource/foam_cut.gif", 'Cut Foam (i)', go_cut_foam_gig)
@@ -2061,6 +2076,7 @@ root.bind("<Control-o>", go_openfile)
 root.bind("<Control-s>", do_savefile)
 root.bind("<Control-z>", do_undo)
 root.bind("<Control-y>", do_redo)
+# These keyboard commands have menu entries and buttons
 root.bind("+", do_zoomin)
 root.bind("=", do_zoomin)
 root.bind("-", do_zoomout)
@@ -2070,10 +2086,10 @@ root.bind("i", go_cut_foam_gig)
 root.bind("y", go_PnP)
 root.bind("q", do_Abort_PnP)
 root.bind("<space>", do_Pause_PnP)
-# This keyboard commands need menu entries and buttons
 root.bind("x", go_autoset_pnp)
-root.bind(".", Check_Point)
 root.bind("*", Center_Wires_in_Part)
+# These ones are only available as keyboard commands
+root.bind(".", Check_Point)
 root.bind("<Home>", ZeroZero_Point)
 root.bind("/", ZeroZero_Point)
 drawgrid()
