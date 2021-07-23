@@ -1123,7 +1123,6 @@ def Help():
     manual="./Manual/PNP_Curio.pdf"
     if sys.platform.lower().startswith('win'):
         manual=manual.replace('/','\\')
-    print(manual)
     subprocess.Popen(manual, shell=True)
 
 def About():
