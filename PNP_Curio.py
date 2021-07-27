@@ -201,34 +201,7 @@ def do_redo(event=None):
     loadfromstring(undo_list_toadd[undo_ctr], 0, False)
     undo_ctr+=1
     file_modified=True
-
-def roundtoint(x0, y0, x1, y1):
-    return int(x0+0.5), int(y0+0.5), int(x1+0.5), int(y1+0.5)
-
-def Update_Bubbles():
-    # Turn off the bubbles of connected wires.  Turn on the bubbles of unconnected wires.
-    for item in g.wire_list:
-        z=get_zoom()
-        a,b,c,d=canvas.coords(item.line)
-        x0, y0, x1, y1=roundtoint(a/z,b/z,c/z,d/z)
-        if g.grid_mat[x0//10][y0//10]>1:
-            item.bubble_onoff(0, 0)
-        else:
-            item.bubble_onoff(0, 1)
-        if g.grid_mat[x1//10][y1//10]>1:
-            item.bubble_onoff(1, 0)
-        else:
-            item.bubble_onoff(1, 1)
-    # Turn off the bubbles of conected pins. Turn on the bubbles of unconnected pins.
-    for item in g.pin_list:
-        z=get_zoom()
-        a,b,c,d=canvas.coords(item.line)
-        x0, y0, x1, y1=roundtoint(a/z,b/z,c/z,d/z)
-        if g.grid_mat[x1//10][y1//10]>1:
-            item.bubble_onoff(0)
-        else:
-            item.bubble_onoff(1)
-    
+  
 def B1Motion(event):
     global click_x, click_y, selected_item, selected_symbol_list, selected_wire_list, ctrlkey
 
@@ -288,7 +261,6 @@ def B1Release(event):
             g.wire_list.append(newwire)
             addundo('',newwire.sym_ascii())
         canvas.delete('ConstructionWire')
-        Update_Bubbles()
         return
 
     if ctrlkey==1:
@@ -299,12 +271,10 @@ def B1Release(event):
             item.movetogrid()
         for item in selected_wire_list:
             item.movetogrid()
-        Update_Bubbles()
         rebuild_buff_toremove()
         addundo(old_buff_toremove, buff_toremove)
     elif selected_item!=0: # Dealing just with one item
         selected_item.movetogrid()
-        Update_Bubbles()
         try:
             addundo(buff_toremove, selected_item.parentsymbol.sym_ascii()) # for labels, we need to add the parent symbol
         except:
@@ -712,7 +682,6 @@ def do_delete(event=None):
         selected_symbol_list=[]
         selected_label_list=[]
         selected_wire_list=[]
-        Update_Bubbles()
         return # skip the rest...
     
     for item in g.symbol_list: # For all the symbols in the list...
@@ -722,7 +691,6 @@ def do_delete(event=None):
             g.symbol_list.remove(item)
             del item
             addundo(buff_toremove,'');
-            Update_Bubbles()
             return
 
     for item in g.wire_list: # For all the wires in the list...
@@ -732,7 +700,6 @@ def do_delete(event=None):
             g.wire_list.remove(item)
             del item
             addundo(buff_toremove,'');
-            Update_Bubbles()
             return
         
 def do_rotate_ccw(event=None):
@@ -750,7 +717,6 @@ def do_rotate_ccw(event=None):
         rebuild_buff_toremove()
         toadd=buff_toremove[:] # Copy the string
         addundo(toremove, toadd)
-        Update_Bubbles()
     else:
         for item in g.symbol_list: # For all the symbols in the list...
             if item.pointisin(click_x, click_y)==1:
@@ -758,7 +724,6 @@ def do_rotate_ccw(event=None):
                 item.rotate_ccw()
                 buff_add=item.sym_ascii()
                 addundo(buff_toremove,buff_add)
-                Update_Bubbles()
                 return
             
         for item in g.label_list: # For all the labels in the list...
@@ -767,7 +732,6 @@ def do_rotate_ccw(event=None):
                 item.rotate_ccw()
                 buff_add=item.parentsymbol.sym_ascii()
                 addundo(buff_toremove,buff_add)
-                Update_Bubbles()
                 return
             
         for item in g.wire_list: # For all the wires in the list...
@@ -776,7 +740,6 @@ def do_rotate_ccw(event=None):
                 item.rotate_ccw()
                 buff_add=item.sym_ascii()
                 addundo(buff_toremove,buff_add)
-                Update_Bubbles()
                 return
 
 def AddSymbol(event=None):
@@ -794,7 +757,6 @@ def AddSymbol(event=None):
             buff_add=newsymbol.sym_ascii()
             addundo('',buff_add)
             g.symbol_list.append(newsymbol)
-            Update_Bubbles()
         except:
             tkMessageBox.showerror("PNP_Curio ERROR", "Not a valid symbol file.")
 
@@ -915,15 +877,24 @@ def do_paste(event=None):
     
 def do_popup(event=None):
     global click_x, click_y, screen_x, screen_y
+    global event_x_root, event_y_root
     # Read the scroll bars and convert to screen coordinates
     screen_x=event.x
     screen_y=event.y
     click_x=canvas.canvasx(event.x)
     click_y=canvas.canvasy(event.y)
     try:
-       popup.tk_popup(event.x_root, event.y_root, 0)
+       event_x_root=event.x_root
+       event_y_root=event.y_root
+       popup.tk_popup(event_x_root, event_y_root, 0)
+    finally:      
+       popup.grab_release() # make sure to release the grab (Tk 8.0a1 only)
+
+def do_popup2(event=None):
+    global event_x_root, event_y_root
+    try:
+       popup2.tk_popup(event_x_root, event_y_root, 0)
     finally:
-       # make sure to release the grab (Tk 8.0a1 only)
        popup.grab_release()
 
 def do_wireonoff(event=None):
@@ -940,7 +911,7 @@ def do_editmode(event=None):
     wiremode=False
     canvas.config( cursor="top_left_arrow")
 
-def myquit():
+def do_quit():
     global file_modified
     
     if file_modified:
@@ -1045,7 +1016,6 @@ def loadfromstring(str, offset, select):
                 if select==True:
                     currsym.select(True)
                     selected_wire_list.append(currsym)
-    Update_Bubbles()
     rebuild_buff_toremove()
 
 def Recent_File_Callback (idx):
@@ -1118,6 +1088,20 @@ def newfile(ask=True):
     undo_list_toremove=[]
     undo_list_toadd=[]
     undo_ctr=0
+
+    # Reconfigure working area
+    g.canvas_ysize=1530 # use small tray
+    h0,h1=hbar.get()
+    v0,v1=vbar.get()
+    canvas.config( scrollregion=(0, 0, g.canvas_xsize*get_zoom(), g.canvas_ysize*get_zoom()) )
+    hbar.set(h0,h1)
+    vbar.set(v0,v1)
+
+    g.grid_mat = [[0 for x in range(g.canvas_ysize//10)] for x in range(g.canvas_xsize//10)]
+    for x in range(g.canvas_xsize//10):
+        for y in range(g.canvas_ysize//10):
+            g.grid_mat[x][y]=0
+    drawgrid()    
 
 def Help():
     manual="./Manual/PNP_Curio.pdf"
@@ -1915,6 +1899,142 @@ def Update_Symbol_Images():
     root.after(100, Update_Symbol_Images) # check again in 100ms
     return
 
+def Align_Left (event=None):
+    global selected_symbol_list
+
+    if len(selected_symbol_list)<2:
+        return
+
+    old_position='' # The old positions are saved here and passed to the undo list
+    new_position='' # The new positions are saved here and passed to the undo list
+    
+    # Find the leftmost point of the selected symbols
+    left_x=1e6
+    for item in selected_symbol_list:
+        points=item.getbound()
+        for i in range(0, len(points), 2):
+            if points[i]<left_x:
+                left_x=points[i]
+
+    # Move the symbols left
+    if left_x<1e6:
+        for item in selected_symbol_list:
+            pos_x=1e6
+            points=item.getbound()
+            for i in range(0, len(points), 2):
+                if points[i]<pos_x:
+                    pos_x=points[i]
+
+            if len(points) > 0:
+                old_position+=item.sym_ascii()
+                item.move(left_x-pos_x, 0)
+                new_position+=item.sym_ascii()
+
+    if len(new_position)>0:
+        addundo(old_position, new_position)        
+
+def Align_Right (event=None):
+    global selected_symbol_list
+
+    if len(selected_symbol_list)<2:
+        return
+
+    old_position='' # The old positions are saved here and passed to the undo list
+    new_position='' # The new positions are saved here and passed to the undo list
+    
+    # Find the rightmost point of the selected symbols
+    right_x=0
+    for item in selected_symbol_list:
+        points=item.getbound()           
+        for i in range(0, len(points), 2):
+            if points[i]>right_x:
+                right_x=points[i]
+
+    # Move the symbols right
+    if right_x>0:
+        for item in selected_symbol_list:
+            points=item.getbound()
+            pos_x=0
+            for i in range(0, len(points), 2):
+                if points[i]>pos_x:
+                    pos_x=points[i]
+
+            if len(points) > 0:
+                old_position+=item.sym_ascii()
+                item.move(right_x-pos_x, 0)
+                new_position+=item.sym_ascii()
+
+    if len(new_position)>0:
+        addundo(old_position, new_position)        
+
+def Align_Bottom (event=None):
+    global selected_symbol_list
+
+    if len(selected_symbol_list)<2:
+        return
+
+    old_position='' # The old positions are saved here and passed to the undo list
+    new_position='' # The new positions are saved here and passed to the undo list
+    
+    # Find the rightmost point of the selected symbols
+    top_y=0
+    for item in selected_symbol_list:
+        points=item.getbound()           
+        for i in range(0, len(points), 2):
+            if points[i+1]>top_y:
+                top_y=points[i+1]
+
+    # Move the symbols right
+    if top_y>0:
+        for item in selected_symbol_list:
+            points=item.getbound()
+            pos_y=0
+            for i in range(0, len(points), 2):
+                if points[i+1]>pos_y:
+                    pos_y=points[i+1]
+
+            if len(points) > 0:
+                old_position+=item.sym_ascii()
+                item.move(0, top_y-pos_y)
+                new_position+=item.sym_ascii()
+
+    if len(new_position)>0:
+        addundo(old_position, new_position)        
+
+def Align_Top (event=None):
+    global selected_symbol_list
+
+    if len(selected_symbol_list)<2:
+        return
+
+    old_position='' # The old positions are saved here and passed to the undo list
+    new_position='' # The new positions are saved here and passed to the undo list
+    
+    # Find the rightmost point of the selected symbols
+    bottom_y=1e6
+    for item in selected_symbol_list:
+        points=item.getbound()           
+        for i in range(0, len(points), 2):
+            if points[i+1]<bottom_y:
+                bottom_y=points[i+1]
+
+    # Move the symbols right
+    if bottom_y<1e6:
+        for item in selected_symbol_list:
+            points=item.getbound()
+            pos_y=1e6
+            for i in range(0, len(points), 2):
+                if points[i+1]<pos_y:
+                    pos_y=points[i+1]
+
+            if len(points) > 0:
+                old_position+=item.sym_ascii()
+                item.move(0, bottom_y-pos_y)
+                new_position+=item.sym_ascii()
+
+    if len(new_position)>0:
+        addundo(old_position, new_position)        
+
 initglobals()
 set_zoom(1.0)
 initlocals()
@@ -1937,11 +2057,20 @@ popup.add_command(label="zoom Out", command=do_zoomout)
 popup.add_command(label="Configure Item", command=do_valueset)
 popup.add_command(label="Copy", command=do_copy)
 popup.add_command(label="Paste", command=do_paste)
+popup.add_command(label="Align >", command=do_popup2)
+
+# create a Align popup menu
+popup2 = Menu(root, tearoff=0)
+popup2.add_command(label="--------")
+popup2.add_command(label="Align Left", command=Align_Left)
+popup2.add_command(label="Align Right", command=Align_Right)
+popup2.add_command(label="Align Top", command=Align_Top)
+popup2.add_command(label="Align Bottom", command=Align_Bottom)
     
 # create the menubar
 menubar = Menu(root)
 
-root.protocol("WM_DELETE_WINDOW", myquit) # Handler for the 'X' button
+root.protocol("WM_DELETE_WINDOW", do_quit) # Handler for the 'X' button
 # create a pulldown menu and add it to the menu bar
 filemenu = Menu(menubar, tearoff=1)
 filemenu.add_command(label="Open", command=openfile)
@@ -1949,10 +2078,9 @@ filemenu.add_command(label="Save", command=do_savefile)
 filemenu.add_command(label="Save as", command=savefileas)
 filemenu.add_command(label="New", command=newfile)
 filemenu.add_separator()
-filemenu.add_command(label="Exit", command=myquit)
+filemenu.add_command(label="Exit", command=do_quit)
 filemenu.add_separator()
 filemenu.add_command(label="xyz", command=newfile)
-#filemenu.entryconfig( 7, label="Hey, I changed the label!" )
 Add_Recent_Files(filemenu, Recent_File_Callback)
 menubar.add_cascade(label="File", menu=filemenu)
 
@@ -2091,6 +2219,10 @@ root.bind("*", Center_Wires_in_Part)
 root.bind(".", Check_Point)
 root.bind("<Home>", ZeroZero_Point)
 root.bind("/", ZeroZero_Point)
+root.bind("[", Align_Left)
+root.bind("]", Align_Right)
+root.bind("^", Align_Top)
+root.bind("_", Align_Bottom)
 drawgrid()
 
 Update_Symbol_Images()

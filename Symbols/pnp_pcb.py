@@ -66,6 +66,10 @@ class sym(symbol.symbol):
         self.target_name=[] # Cut tape name to use for each target
         self.target_angle=[] # Cut tape orientation to use for each target
 
+    def getbound(self):
+        points=self.canvas.coords(self.pcbframe)
+        return points       
+
     def rotate_ccw(self):
         return
 
@@ -126,9 +130,6 @@ class sym(symbol.symbol):
         if self.Last_Centroid_File_Loaded != self.label_list[4].get_value():
             new_size=1
 
-        if self.prev_zoom!=self.zoom:
-            new_size=1
-
         if new_size==1:
             self.last_Width=Width
             self.last_Length=Length
@@ -182,7 +183,7 @@ class sym(symbol.symbol):
                         else:
                             if len(word) > 4:
                                 # Expects something like this (Ultiboard format, units are mils):
-                                # "C1 100nF 2608.00000 997.95543 90 TOP SMD R0805" 
+                                # "C1 100nF 2608.00000 997.95543 90 TOP SMD C0805" 
                                 x=round((float(word[2])-topx)*scale, 2)*10
                                 y=round((float(word[3])-topy)*scale*-1, 2)*10
                                 #print("Target: " + str((x, y)))
@@ -221,15 +222,15 @@ class sym(symbol.symbol):
                     self.canvas.delete(self.canvas_image)
                 except:
                     pass
-        else:
-            if self.prev_zoom!=self.zoom:
-                try:
-                    self.prev_zoom=self.zoom
-                    resized_image= self.img.resize((int(abs(x1a-x2a)), int(abs(y1a-y2a))), Image.ANTIALIAS)
-                    self.pcb_image=ImageTk.PhotoImage(resized_image)
-                    self.canvas.itemconfig(self.canvas_image, image=self.pcb_image)
-                except:
-                    pass
+
+        if self.prev_zoom!=self.zoom:
+            try:
+                self.prev_zoom=self.zoom
+                resized_image= self.img.resize((int(abs(x1a-x2a)), int(abs(y1a-y2a))), Image.ANTIALIAS)
+                self.pcb_image=ImageTk.PhotoImage(resized_image)
+                self.canvas.itemconfig(self.canvas_image, image=self.pcb_image)
+            except:
+                pass
 
 
 

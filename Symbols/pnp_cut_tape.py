@@ -80,6 +80,10 @@ class sym(symbol.symbol):
         self.label_list[3].set_value(str(Rotation%360.0))
         return
 
+    def getbound(self):
+        points=self.canvas.coords(self.tapeframe)
+        return points       
+
     def pointisin(self, x, y):
         inside = False
 

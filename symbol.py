@@ -116,15 +116,6 @@ class symbol:
         self.y+=dy
 
     def movetogrid(self):
-        self.remove_from_grid_mat()
-        x1, y1, x2, y2 = self.canvas.coords(self.rect)
-        gridsize=get_zoom()
-        x=int((x1+gridsize/2)/gridsize)
-        y=int((y1+gridsize/2)/gridsize)
-        x*=gridsize
-        y*=gridsize
-        self.move(x-x1, y-y1)
-        self.add_to_grid_mat()
         return
 
     def configure_label(self, n, x, y, value, direction, visible, height=4):
@@ -181,6 +172,10 @@ class symbol:
             x1b, y1b, xb2, y2b = self.canvas.coords(item.rect)
             s+='label,%0.2f,%0.2f,%s,%d,%d,%0.2f\n' % (x1b/z, y1b/z, item.value, item.direction, item.visible, item.height)
         return s
+
+    def getbound(self):
+        points=self.canvas.coords(self.rect)
+        return points       
        
 class MyDialog(tkSimpleDialog.Dialog):
 

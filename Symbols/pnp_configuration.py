@@ -35,6 +35,8 @@ class sym(symbol.symbol):
 
     def __init__(self, canvas, x, y):
         self.tag='CONFIGURATION_' + str(sym.Count)
+        self.tag_fill='CONFIGURATION_' + str(sym.Count) + '_fill'
+        self.tag_outline='CONFIGURATION_' + str(sym.Count) + '_outline'
         self.canvas=canvas
         self.x=x
         self.y=y
@@ -51,12 +53,12 @@ class sym(symbol.symbol):
 
     def draw(self):
         self.zoom=get_zoom()
-        self.rect=self.canvas.create_rectangle(0, 0, 160, 160, outline='', width=1, tags=(self.tag), dash=(5,5))
-        self.canvas.create_rectangle(0, 0, 160, 160, outline= get_symbol_color(), tags=(self.tag))
-        self.canvas.create_line(80, 100, 80, 150, fill = get_symbol_color(), tags=(self.tag))
-        self.canvas.create_line(80, 60, 80, 10, fill = get_symbol_color(), tags=(self.tag))
-        self.canvas.create_line(100, 80, 150, 80, fill = get_symbol_color(), tags=(self.tag))
-        self.canvas.create_line(60, 80, 10, 80, fill = get_symbol_color(), tags=(self.tag))
+        self.rect=self.canvas.create_rectangle(0, 0, 160, 160, outline='', width=1, tags=(self.tag, self.tag_outline), dash=(5,5))
+        self.canvas.create_rectangle(0, 0, 160, 160, outline= get_symbol_color(), tags=(self.tag, self.tag_outline))
+        self.canvas.create_line(80, 100, 80, 150, fill = get_symbol_color(), tags=(self.tag, self.tag_fill))
+        self.canvas.create_line(80, 60, 80, 10, fill = get_symbol_color(), tags=(self.tag, self.tag_fill))
+        self.canvas.create_line(100, 80, 150, 80, fill = get_symbol_color(), tags=(self.tag, self.tag_fill))
+        self.canvas.create_line(60, 80, 10, 80, fill = get_symbol_color(), tags=(self.tag, self.tag_fill))
         self.canvas.move(self.tag, self.x, self.y)
         self.canvas.scale(self.tag, 0, 0, self.zoom, self.zoom)
         self.addlabel(160, 0, 'Name', 'Configure', 0, 0)
