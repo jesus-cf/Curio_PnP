@@ -649,13 +649,14 @@ def DoubleB1Press(event):
            addundo(buff_toremove, buff_toadd)
            return
 
-    for item in g.wire_list: # For all the wires in the list...
-        if item.pointisin(posx, posy)==1:
-           buff_toremove=item.sym_ascii()
-           item.valueset(root, event.x, event.y)
-           buff_toadd=item.sym_ascii()
-           addundo(buff_toremove, buff_toadd)
-           return
+    # This one may take a very long time to run
+    #for item in g.wire_list: # For all the wires in the list...
+    #    if item.pointisin(posx, posy)==1:
+    #       buff_toremove=item.sym_ascii()
+    #       item.valueset(root, event.x, event.y)
+    #       buff_toadd=item.sym_ascii()
+    #       addundo(buff_toremove, buff_toadd)
+    #       return
   
 def do_cut(event=None):
     do_copy()
@@ -828,13 +829,14 @@ def do_zoomout(event=None):
 def do_valueset():
     global click_x, click_y
 
-    for item in g.wire_list: # For all the wires in the list...
-        if item.pointisin(click_x, click_y)==1:
-            remove_buffer=item.sym_ascii()
-            item.valueset(root, screen_x, screen_y)
-            add_buffer=item.sym_ascii()
-            addundo(remove_buffer, add_buffer)
-            return
+    # The functionality is built in wires, but not used so skip them
+    #for item in g.wire_list: # For all the wires in the list...
+    #    if item.pointisin(click_x, click_y)==1:
+    #        remove_buffer=item.sym_ascii()
+    #        item.valueset(root, screen_x, screen_y)
+    #        add_buffer=item.sym_ascii()
+    #        addundo(remove_buffer, add_buffer)
+    #        return
 
     for item in g.label_list: # For all the labels in the list...
         if (item.pointisin(click_x, click_y)==1) and (item.visible>0):
