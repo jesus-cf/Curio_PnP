@@ -56,6 +56,8 @@ class wire(symbol.symbol):
         self.move1=False
         self.cs1=4
         self.cs2=5
+        self.tape_angle=0 # Updated before pick and place
+        self.part_angle=0 # Updated before pick and place
         self.draw()
         self.add_to_grid_mat()
 
@@ -177,6 +179,12 @@ class wire(symbol.symbol):
             p3y=int(y1-dy)
 
         return p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y, p0x, p0y
+
+    def addlabel(self, x, y, name, value, orientation, display, height=4):
+        self.zoom=get_zoom()
+        newlabel=label.label(self.canvas, self, self.x+x, self.y+y, name, value, orientation, display, height)
+        self.label_list.append(newlabel)
+        g.label_list.append(newlabel)
          
     def draw(self):
         self.zoom=get_zoom()
@@ -195,8 +203,8 @@ class wire(symbol.symbol):
                                           tags=(self.tag, self.tag2, "wires", "wireline"))
         self.canvas.scale(self.tag, 0, 0, self.zoom, self.zoom)
         self.canvas.itemconfigure(self.tag, width=self.zoom*3)
-        self.addlabel(0, 10, 'Name', 'PNP Wire', 0, 0)
-        self.addlabel(0, 50, 'Value', '0', 0, 0)
+        self.addlabel(0, 10, 'Name', 'PNP wire', 0, 0)
+        self.addlabel(0, 50, 'Rotation', '0', 0, 0)
         
     def bubble_onoff(self, n, onoff):
         if onoff==1:

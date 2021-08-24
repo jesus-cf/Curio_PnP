@@ -1466,17 +1466,23 @@ Alternatively, you can add yourself to group 'lp' and logout/login.""" % (self.h
       return False
 
 # ------------------------------------------------------------------------------------------------------------
-  def Center(self, x_mm, y_mm, dx, dy):
-    self.send_command([self.move_mm_cmd(y_mm, x_mm)])
-    self.wait_for_ready(verbose=False)
-    # Wiggle the part to try center it
-    self.send_command([self.draw_mm_cmd(y_mm+dy, x_mm+dx)])  
-    self.send_command([self.draw_mm_cmd(y_mm-dy/2, x_mm-dx/2)])  
-    self.wait_for_ready(verbose=False)
+  def Config_Servo (self, ServoDelay=250, ServoMax=245, ServoMin=55):
+    try:
+      self.ser.write(bytes('X'+str(int(ServoDelay))+'\r\n', 'utf-8'))
+      time.sleep(1.0)
+      self.ser.write(bytes('M'+str(int(ServoMax))+'\r\n', 'utf-8'))
+      time.sleep(1.0)
+      self.ser.write(bytes('m'+str(int(ServoMin))+'\r\n', 'utf-8'))
+      time.sleep(1.0)
+      return True
+    except:
+      print("Serial port for vacuum control is not available")
+      return False
 
 # ------------------------------------------------------------------------------------------------------------
   def Pick(self, x_mm, y_mm, duration=10):
     self.send_command([self.move_mm_cmd(y_mm, x_mm)])
+    #print(self.move_mm_cmd(y_mm, x_mm))
     self.wait_for_ready(verbose=False)
     try:
       self.ser.write(b'1')
@@ -1548,7 +1554,23 @@ Alternatively, you can add yourself to group 'lp' and logout/login.""" % (self.h
       self.send_command("!%d,%d" % (Speed, Tool))
       self.wait_for_ready(verbose=False)
 
+# ------------------------------------------------------------------------------------------------------------
+  def Circle(self, x_mm, y_mm, r_mm, ang1, ang2): #angles are in degrees
+      self.wait_for_ready(verbose=False)
+      # Wx0,y0,r1,r2,θ1,θ2[,d][t]
+      self.send_command("W%d,%d,%d,%d,%d,%d" % (_mm_2_SU(y_mm), _mm_2_SU(x_mm),
+                                                _mm_2_SU(r_mm), _mm_2_SU(r_mm),
+                                                int(ang1*10), int(ang2*10) ))
+      self.wait_for_ready(verbose=False)
 
+# ------------------------------------------------------------------------------------------------------------
+  def Set_Servo (self, Angle=0):
+    try:
+      self.ser.write(bytes('A'+str(int(Angle))+'\r\n', 'utf-8'))
+      return True
+    except:
+      print("Serial port for vacuum control is not available")
+      return False
 
 
 

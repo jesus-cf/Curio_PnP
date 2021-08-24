@@ -81,9 +81,9 @@ class symbol:
         #Destroy all the canvas items associated with this symbol
         self.canvas.delete(self.tag)
 
-    def addlabel(self, x, y, name, value, orientation, display):
+    def addlabel(self, x, y, name, value, orientation, display, height=4):
         self.zoom=get_zoom()
-        newlabel=label.label(self.canvas, self, self.x+x, self.y+y, name, value, orientation, display)
+        newlabel=label.label(self.canvas, self, self.x+x, self.y+y, name, value, orientation, display, height)
         self.label_list.append(newlabel)
         g.label_list.append(newlabel)
 

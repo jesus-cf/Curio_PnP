@@ -96,6 +96,8 @@ class sym(symbol.symbol):
         except:
             Rotation=0
 
+        Rotation = (Rotation+180.0) % 360.0
+        
         # get the center of rotation
         origin=self.canvas.coords(self.rect)
         center=[origin[0], origin[1]]
@@ -220,30 +222,32 @@ class sym(symbol.symbol):
             self.canvas.delete(self.tag)
             self.targets.clear()
 
+            angle=(new_Rotation+180) % 360.0
+
             self.rect=self.canvas.create_rectangle(0, 0, 1, 1, outline='', width=1, tags=(self.tag, self.tag_outline),
                                                    dash=(5,5))
 
             points=[0, 0, new_Width*10, 0, new_Width*10, new_Length*10, 0, new_Length*10, 0, 0]
-            new_points=self.rotate(points, new_Rotation, center)
+            new_points=self.rotate(points, angle, center)
             self.tapeframe=self.canvas.create_line(new_points, fill = get_symbol_color(),
                                                    tags=(self.tag, self.tag_fill, self.tag_foamcut, "imagebox"))
 
             points=[new_Width*10-17.5, 0]
-            new_points=self.rotate(points, new_Rotation, center)
+            new_points=self.rotate(points, angle, center)
             self.canvas.create_arc( new_points[0]-8,  new_points[1]-8, new_points[0]+8, new_points[1]+8,
-                                    style='arc', start=new_Rotation, extent=-180, outline = get_symbol_color(),
+                                    style='arc', start=angle, extent=-180, outline = get_symbol_color(),
                                     tags=(self.tag, self.tag_outline))           
 
             points=[new_Width*10-17.5, new_Length*10]
-            new_points=self.rotate(points, new_Rotation, center)
+            new_points=self.rotate(points, angle, center)
             self.canvas.create_arc( new_points[0]-8,  new_points[1]-8, new_points[0]+8, new_points[1]+8,
-                                    style='arc', start=new_Rotation, extent=+180, outline = get_symbol_color(),
+                                    style='arc', start=angle, extent=+180, outline = get_symbol_color(),
                                     tags=(self.tag, self.tag_outline))
 
             # draw sprocket holes
             for i in range(40,  int(new_Length*10), 40):
                 points=[new_Width*10-17.5, i] # the hole is 1.75mm from the edge
-                new_points=self.rotate(points, new_Rotation, center)
+                new_points=self.rotate(points, angle, center)
                 self.canvas.create_arc( new_points[0]-8,  new_points[1]-8, new_points[0]+8, new_points[1]+8,
                                         style='arc', start=0, extent=359, outline = get_symbol_color(), tags=(self.tag, self.tag_outline))
             # draw the part hole
@@ -254,19 +258,19 @@ class sym(symbol.symbol):
                 points=[pcenter-(pwidth/2), -(plength/2)+i, pcenter+(pwidth/2), -(plength/2)+i,
                         pcenter+(pwidth/2),  (plength/2)+i, pcenter-(pwidth/2),  (plength/2)+i,
                         pcenter-(pwidth/2), -(plength/2)+i]
-                new_points=self.rotate(points, new_Rotation, center)
+                new_points=self.rotate(points, angle, center)
                 self.canvas.create_line(new_points, fill=get_symbol_color(), tags=(self.tag, self.tag_fill))
                 #draw cross hairs in the middle of the part
                 points=[pcenter-5, i, pcenter+5, i]
-                new_points=self.rotate(points, new_Rotation, center)
+                new_points=self.rotate(points, angle, center)
                 self.canvas.create_line(new_points, fill=get_symbol_color(), tags=(self.tag, self.tag_fill))
                 #draw cross hairs in the middle of the part
                 points=[pcenter, i-5, pcenter, i+5]
-                new_points=self.rotate(points, new_Rotation, center)
+                new_points=self.rotate(points, angle, center)
                 self.canvas.create_line(new_points, fill=get_symbol_color(), tags=(self.tag, self.tag_fill))
                 #create a target object
                 points=[pcenter, i, pcenter+1, i]
-                new_points=self.rotate(points, new_Rotation, center)
+                new_points=self.rotate(points, angle, center)
                 newtarget=self.canvas.create_line(new_points, fill=get_symbol_color(), tags=(self.tag, self.tag_fill))
                 self.targets.append(newtarget)
 
@@ -275,7 +279,7 @@ class sym(symbol.symbol):
             y1=int((plength/40)+1)*20-(plength/2)
             y2=int(new_Length*10)-int((plength/40)+1)*20+(plength/2)
             points=[x1, y1, x2, y1, x2, y2, x1, y2, x1, y1]
-            new_points=self.rotate(points, new_Rotation, center)
+            new_points=self.rotate(points, angle, center)
 
             if new_insidecut=='1' or new_insidecut.lower()=='yes' or new_insidecut.lower()=='y' or new_insidecut.lower()=='on':
                 self.insidecut=self.canvas.create_line(new_points, fill=get_symbol_color(),

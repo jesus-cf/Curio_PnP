@@ -31,7 +31,7 @@ from vectortext import *
 class label:
     Count = 0
 
-    def __init__(self, canvas, parentsymbol, x, y, name, value, direction, visible):
+    def __init__(self, canvas, parentsymbol, x, y, name, value, direction, visible, height=4):
         self.tag='LABEL_' + str(label.Count)
         self.tagtext='LABEL_' + str(label.Count) + "_TEXT"
         self.canvas=canvas
@@ -44,7 +44,7 @@ class label:
         self.visible=visible # 0:nothing, 1:value, 2:name=value
         label.Count+=1
         self.rect=0
-        self.height=4 # in mm
+        self.height=height # in mm
         self.parentsymbol=parentsymbol
         self.draw()
 
@@ -143,10 +143,13 @@ class label:
         self.draw()
         
     def pointisin(self, x, y):
-        x1, y1, x2, y2 = self.canvas.coords(self.rect)
-        if (x>=x1) and (x<=x2) and (y>=y1) and (y<=y2):
-            return 1
-        else:
+        try:
+            x1, y1, x2, y2 = self.canvas.coords(self.rect)
+            if (x>=x1) and (x<=x2) and (y>=y1) and (y<=y2):
+                return 1
+            else:
+                return 0
+        except:
             return 0
 
     def move(self, dx, dy):

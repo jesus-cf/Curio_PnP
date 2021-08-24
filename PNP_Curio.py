@@ -41,6 +41,7 @@ else:
     from tkinter import *
     from tkinter import messagebox as tkMessageBox
     from tkinter import filedialog as tkFileDialog
+    from tkinter import simpledialog
 
 import vectortext
 import label
@@ -632,6 +633,15 @@ def B1CtrlPress(event):
 def DoubleB1Press(event):
     posx=canvas.canvasx(event.x)
     posy=canvas.canvasy(event.y)
+
+    # This one may take a very long time to run
+    for item in g.wire_list: # For all the wires in the list...
+        if item.pointisin(posx, posy)==1:
+           buff_toremove=item.sym_ascii()
+           item.valueset(root, event.x, event.y)
+           buff_toadd=item.sym_ascii()
+           addundo(buff_toremove, buff_toadd)
+           return
     
     for item in g.label_list: # For all the labels in the list...
         if (item.pointisin(posx, posy)==1) and (item.visible>0):
@@ -648,15 +658,6 @@ def DoubleB1Press(event):
            buff_toadd=item.sym_ascii()
            addundo(buff_toremove, buff_toadd)
            return
-
-    # This one may take a very long time to run
-    #for item in g.wire_list: # For all the wires in the list...
-    #    if item.pointisin(posx, posy)==1:
-    #       buff_toremove=item.sym_ascii()
-    #       item.valueset(root, event.x, event.y)
-    #       buff_toadd=item.sym_ascii()
-    #       addundo(buff_toremove, buff_toadd)
-    #       return
   
 def do_cut(event=None):
     do_copy()
@@ -830,13 +831,13 @@ def do_valueset():
     global click_x, click_y
 
     # The functionality is built in wires, but not used so skip them
-    #for item in g.wire_list: # For all the wires in the list...
-    #    if item.pointisin(click_x, click_y)==1:
-    #        remove_buffer=item.sym_ascii()
-    #        item.valueset(root, screen_x, screen_y)
-    #        add_buffer=item.sym_ascii()
-    #        addundo(remove_buffer, add_buffer)
-    #        return
+    for item in g.wire_list: # For all the wires in the list...
+        if item.pointisin(click_x, click_y)==1:
+            remove_buffer=item.sym_ascii()
+            item.valueset(root, screen_x, screen_y)
+            add_buffer=item.sym_ascii()
+            addundo(remove_buffer, add_buffer)
+            return
 
     for item in g.label_list: # For all the labels in the list...
         if (item.pointisin(click_x, click_y)==1) and (item.visible>0):
@@ -853,6 +854,7 @@ def do_valueset():
            add_buffer=item.sym_ascii()
            addundo(remove_buffer, add_buffer)
            return
+
 
 def do_copy(event=None):
     global selected_symbol_list, selected_wire_list 
@@ -1313,6 +1315,60 @@ def do_draw_text():
 
     Curio_in_Use=0
 
+def do_draw_gage(event=None):
+    global Curio_in_Use, abort_PnP
+    global PnP_X_Offset, PnP_Y_Offset
+    global P
+    z=get_zoom()
+
+    try:
+        P.clrcmds()
+    except:
+        GetCurioReady()
+        try:
+            P.clrcmds()
+        except:
+            tkMessageBox.showerror("PnP ERROR", "Curio not ready")
+            return
+
+    P.Use_Pen()
+    P.Set_Pressure(15) # 1 to 33
+    P.Set_Speed(5) # 1 to 10
+
+    P.tool_down(0, 0)
+
+    count=0
+    allitems=canvas.find_withtag('gage_line') 
+    for item in allitems:
+        if abort_PnP==1:
+            break
+        points= canvas.coords(item)
+        points = [i/z for i in points] # zoom adjust       
+        points = [i/10 for i in points] # to convert to mm divide by 10
+        # Add the offset in mm
+        for j in range (0, len(points), 2):
+            points[j+0]=points[j+0]+PnP_X_Offset
+            points[j+1]=points[j+1]+PnP_Y_Offset
+        P.addcmd(points)
+        count=count+1
+        if count==50:
+            P.sendcmds()
+            count=0
+
+    if abort_PnP==1:
+        print("\nGage line draw aborted by user")
+        abort_PnP=0
+    else:
+        if count!=0:
+            P.sendcmds()
+            
+    P.move_xy(0, 0)
+    P.Use_Pen()
+    P.Set_Pressure(1) # 1 to 33
+    P.Set_Speed(10) # 1 to 10
+
+    Curio_in_Use=0
+
 def go_cut_foam_gig(event=None):
     global Curio_in_Use, abort_PnP
     if Curio_in_Use:
@@ -1364,6 +1420,8 @@ def do_cut_foam_gig():
                 points=canvas.coords(item.tapeframe)
         elif 'PCB' in item.tag:
             points=canvas.coords(item.pcbframe)
+        elif 'GAGE' in item.tag:
+            points=canvas.coords(item.gageframe)
 
         if len(points) > 0:
             for j in range(0, len(points)-2, 2): # Check the angles of the poly lines. Append them to the list if needed.
@@ -1423,6 +1481,8 @@ def do_cut_foam_gig():
                     points= canvas.coords(item.tapeframe)
             elif 'PCB' in item.tag:
                 points=canvas.coords(item.pcbframe)
+            elif 'GAGE' in item.tag:
+                points=canvas.coords(item.gageframe)
 
             if len(points) > 0:    
                 for j in range(0, len(points)-2, 2):
@@ -1506,11 +1566,40 @@ def do_PnP():
         Curio_in_Use=0
         return
 
-    if P.Set_PnP_Time()==False:
+    # Set default values
+    ton=350
+    toff=350
+    servo_delay=250
+    servo_max=245
+    servo_min=55
+    
+    # Read configuration values if present
+    for item in g.symbol_list: # For all the symbols in the list...
+        if 'CONFIGURATION' in item.tag: # Read information from the configuration symbol
+            try:
+                ton=int(eval(item.label_list[5].get_value()))
+                toff=int(eval(item.label_list[6].get_value()))
+                servo_delay=int(eval(item.label_list[7].get_value()))
+                servo_max=int(eval(item.label_list[8].get_value())*100)
+                servo_min=int(eval(item.label_list[9].get_value())*100)
+            except:
+                pass
+            break
+
+    if P.Set_PnP_Time(ton, toff)==False:
         print("Cant proceed with pick and place")
         Curio_in_Use=0
         return
 
+    if P.Config_Servo(servo_delay, servo_max, servo_min)==False:
+        print("Cant proceed with pick and place")
+        Curio_in_Use=0
+        return  
+
+    P.Use_Pen()
+    P.Set_Pressure(5) # 1 to 33
+    P.Set_Speed(10) # 1 to 10
+    
     P.tool_down(0, 0)
     
     start = time.time()
@@ -1521,6 +1610,23 @@ def do_PnP():
         topnp=selected_symbol_list
     else:
         topnp=g.symbol_list
+
+    # Update all the pick and place angles
+    for item in g.wire_list: # For all the wires in the list...
+        try:
+            item.part_angle=eval(item.label_list[1].get_value())
+        except:
+            item.part_angle=0
+        for item_tape in g.symbol_list: # For all the symbols in the list...
+            if 'CUT_TAPE' in item_tape.tag:
+                points= canvas.coords(item.line)
+                # If source point of the pnp wire is inside the cut tape, get the tape angle
+                if item_tape.pointisin(points[0], points[1])==1:
+                    #print('Tape angle is: ' + str(item_tape.label_list[3].get_value()) )
+                    try:
+                        item.tape_angle=eval(item_tape.label_list[3].get_value())
+                    except:
+                        item.tape_angle=0
 
     # Pick and place of individual parts takes precedence over carrier cut tape or pcb pick and place
     # Therefore if there is a wire selected, do only wires:
@@ -1541,10 +1647,25 @@ def do_PnP():
                     time.sleep(1)
                 if abort_PnP==1:
                     break
-                canvas.itemconfigure(item.tag2, fill = get_select_color())                   
-                P.Pick((points[0]/(10*z))+PnP_X_Offset, (points[1]/(10*z))+PnP_Y_Offset)
-                time.sleep(0.3)
-                P.Place((points[2]/(10*z))+PnP_X_Offset, (points[3]/(10*z))+PnP_Y_Offset)
+                #Calculate the rotation
+                total_rotation=(item.part_angle-item.tape_angle+360.0)%360.0
+                if total_rotation<=180:
+                    servo_start=0
+                    servo_end=total_rotation
+                else:
+                    servo_start=180
+                    servo_end=total_rotation-180
+                #Pick and place
+                canvas.itemconfigure(item.tag2, fill = get_select_color())
+                P.Set_Servo(servo_start)
+                my_x=(points[0]/(10*z))+PnP_X_Offset
+                my_y=(points[1]/(10*z))+PnP_Y_Offset
+                #print("pick: (%f, %f)" % (my_x, my_y))
+                P.Pick(my_x, my_y)
+                P.Set_Servo(servo_end)
+                my_x=(points[2]/(10*z))+PnP_X_Offset
+                my_y=(points[3]/(10*z))+PnP_Y_Offset
+                P.Place(my_x, my_y)
                 canvas.itemconfigure(item.tag2, fill = get_wire_color())
                 cnt=cnt+1
     else: # for PCBs and Cut Tape
@@ -1581,15 +1702,33 @@ def do_PnP():
                             time.sleep(1)
                         if abort_PnP==1:
                             break
-                        canvas.itemconfigure(w_item.tag2, fill = get_select_color())                   
-                        if P.Pick((points[0]/(10*z))+PnP_X_Offset, (points[1]/(10*z))+PnP_Y_Offset)==False:
+                        # Calculate the rotation
+                        total_rotation=(w_item.part_angle-w_item.tape_angle+360.0)%360.0
+                        if total_rotation<=180:
+                            servo_start=0
+                            servo_end=total_rotation
+                        else:
+                            servo_start=180
+                            servo_end=total_rotation-180
+                        # print('Servo start = ' + str(servo_start) + ', Servo end = ' + str(servo_end))
+                        canvas.itemconfigure(w_item.tag2, fill = get_select_color())
+                        # Pick and place:
+                        P.Set_Servo(servo_start)
+                        my_x=(points[0]/(10*z))+PnP_X_Offset
+                        my_y=(points[1]/(10*z))+PnP_Y_Offset
+                        #print("pick: (%f, %f)" % (my_x, my_y))
+                        if P.Pick(my_x, my_y)==False:
                             P.move_xy(0, 0)
+                            P.Close_Serial_Port()
                             Curio_in_Use=0
+                            print("\nSomething went wrong picking a part.\n");
                             return
-                        time.sleep(0.3)
+                        P.Set_Servo(servo_end)
                         if P.Place((points[2]/(10*z))+PnP_X_Offset, (points[3]/(10*z))+PnP_Y_Offset)==False:
                             P.move_xy(0, 0)
+                            P.Close_Serial_Port()
                             Curio_in_Use=0
+                            print("\nSomething went wrong placing a part.\n");
                             return                           
                         canvas.itemconfigure(w_item.tag2, fill = get_wire_color())
                         cnt=cnt+1
@@ -1627,7 +1766,11 @@ def Check_Point(event):
             return
 
     start = time.time()
-    P.move_xy( (canvas_xpos/(10*z))+PnP_X_Offset, (canvas_ypos/(10*z))+PnP_Y_Offset)
+    my_x=(canvas_xpos/(10*z))+PnP_X_Offset
+    my_y=(canvas_ypos/(10*z))+PnP_Y_Offset
+    #print("off: (%f, %f)" % (PnP_X_Offset, PnP_Y_Offset))
+    #print("check: (%f, %f)" % (my_x, my_y))
+    P.move_xy( my_x, my_y)
     end = time.time()
     print("Time: " + str(round((end-start),2)) +"s")
 
@@ -1673,8 +1816,8 @@ def go_autoset_pnp(event=None):
 
                         if 'CUT_TAPE' in ct_item.tag:
                             # Check for cut tape match of target name and rotation
-                            if ( ct_item.label_list[0].get_value()==item.target_name[j] and
-                                 round(float(ct_item.label_list[3].get_value()),1)==round(float(item.target_angle[j]),1) ):
+                            if ct_item.label_list[0].get_value()==item.target_name[j]:
+                                target_angle=round(float(item.target_angle[j]),1)
                                 # Now look for a target available in the cut tape
                                 for k in range(0,len(ct_item.targets)):
                                    ct_target_points=canvas.coords(ct_item.targets[k])
@@ -1695,13 +1838,14 @@ def go_autoset_pnp(event=None):
                                        success=True                                         
                                        #create a new wire
                                        newwire=wire.wire(canvas, ct_tx/z, ct_ty/z, pcb_tx/z, pcb_ty/z, '')
+                                       newwire.label_list[1].set_value(target_angle) # the required part rotation
                                        g.wire_list.append(newwire)
                                        new_wires+=newwire.sym_ascii()
                                        break
 
                 if not success:
-                    print("Warning: Component \'%s\' with rotation \'%s\' in pcb \'%s\' is not available." %
-                          (item.target_name[j], item.target_angle[j], item.label_list[0].get_value()))
+                    print("Warning: Component \'%s\' in pcb \'%s\' is not available." %
+                          (item.target_name[j], item.label_list[0].get_value()))
     if len(new_wires)>0:
         addundo('',new_wires)
     
@@ -2037,6 +2181,82 @@ def Align_Top (event=None):
     if len(new_position)>0:
         addundo(old_position, new_position)        
 
+def test_circle(event=None):
+    global Curio_in_Use, abort_PnP
+    global PnP_X_Offset, PnP_Y_Offset
+    global P
+    z=get_zoom()
+
+    try:
+        P.clrcmds()
+    except:
+        GetCurioReady()
+        try:
+            P.clrcmds()
+        except:
+            tkMessageBox.showerror("PnP ERROR", "Curio not ready")
+            return
+        
+    if Curio_in_Use:
+        return
+
+    Curio_in_Use=1
+    
+    #P.Use_Pen()
+    #P.Set_Pressure(1) # 1 to 33
+    #P.Set_Speed(10) # 1 to 10
+
+    P.Use_Blade()
+    P.Set_Pressure(15) # 1 to 33
+    P.Set_Speed(5) # 1 to 10
+
+    P.tool_down(100, 50)
+
+    P.Circle(100.0, 50.0, 11.0, 0.0, 380.0) # angles in degrees
+
+    P.move_xy(0, 0)
+    P.Use_Pen()
+    P.Set_Pressure(1) # 1 to 33
+    P.Set_Speed(10) # 1 to 10
+
+    Curio_in_Use=0
+
+def rot_circle(event=None):
+    global Curio_in_Use, abort_PnP
+    global PnP_X_Offset, PnP_Y_Offset
+    global P
+    z=get_zoom()
+
+    try:
+        P.clrcmds()
+    except:
+        GetCurioReady()
+        try:
+            P.clrcmds()
+        except:
+            tkMessageBox.showerror("PnP ERROR", "Curio not ready")
+            return
+        
+    if Curio_in_Use:
+        return
+
+    Curio_in_Use=1
+
+    x = simpledialog.askstring("Rotate Circle", "Degrees")
+
+    P.Use_Pen()
+    P.Set_Pressure(33) # 1 to 33
+    P.Set_Speed(1) # 1 to 10
+
+    P.Circle(100.0, 50.0, 10.0, 0.0, float(x)) # angles in degrees
+
+    P.move_xy(0, 0)
+    P.Use_Pen()
+    P.Set_Pressure(1) # 1 to 33
+    P.Set_Speed(10) # 1 to 10
+
+    Curio_in_Use=0
+
 initglobals()
 set_zoom(1.0)
 initlocals()
@@ -2217,17 +2437,20 @@ root.bind("q", do_Abort_PnP)
 root.bind("<space>", do_Pause_PnP)
 root.bind("x", go_autoset_pnp)
 root.bind("*", Center_Wires_in_Part)
-# These ones are only available as keyboard commands
-root.bind(".", Check_Point)
-root.bind("<Home>", ZeroZero_Point)
-root.bind("/", ZeroZero_Point)
 root.bind("[", Align_Left)
 root.bind("]", Align_Right)
 root.bind("^", Align_Top)
 root.bind("_", Align_Bottom)
+# These ones are only available as keyboard commands
+root.bind(".", Check_Point)
+root.bind("<Home>", ZeroZero_Point)
+root.bind("/", ZeroZero_Point)
+root.bind("g", do_draw_gage)
+root.bind("c", test_circle)
+root.bind("d", rot_circle)
 drawgrid()
 
 Update_Symbol_Images()
 
 root.mainloop()
-
+    
